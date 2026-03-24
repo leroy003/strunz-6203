@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>矿物数据库 - Strunz分类系统</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>🪨 矿物数据库</h1>
+        <p class="subtitle">基于 Strunz 第10版分类系统 · 共收录 6,203 种矿物</p>
+    </header>
+
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="搜索矿物名称、化学式、英文名..." oninput="handleSearch(this.value)">
+        <span class="search-icon">🔍</span>
+    </div>
+
+    <div id="searchResults" class="search-results" style="display:none;"></div>
+
+    <nav id="classNav" class="class-nav">
+        <div class="class-card" onclick="showClass('01')">
+            <div class="class-number">01</div>
+            <div class="class-name">元素矿物</div>
+            <div class="class-en">Elements</div>
+            <div class="class-count">78 种</div>
+        </div>
+        <div class="class-card" onclick="showClass('02')">
+            <div class="class-number">02</div>
+            <div class="class-name">硫化物和硫盐</div>
+            <div class="class-en">Sulfides & Sulfosalts</div>
+            <div class="class-count">720 种</div>
+        </div>
+        <div class="class-card" onclick="showClass('03')">
+            <div class="class-number">03</div>
+            <div class="class-name">卤化物</div>
+            <div class="class-en">Halides</div>
+            <div class="class-count">152 种</div>
+        </div>
+        <div class="class-card" onclick="showClass('04')">
+            <div class="class-number">04</div>
+            <div class="class-name">氧化物和氢氧化物</div>
+            <div class="class-en">Oxides & Hydroxides</div>
+            <div class="class-count">840 种</div>
+        </div>
+        <div class="class-card" onclick="showClass('05')">
+            <div class="class-number">05</div>
+            <div class="class-name">碳酸盐和硝酸盐</div>
+            <div class="class-en">Carbonates & Nitrates</div>
+            <div class="class-count">468 种</div>
+        </div>
+        <div class="class-card" onclick="showClass('06')">
+            <div class="class-number">06</div>
+            <div class="class-name">硼酸盐</div>
+            <div class="class-en">Borates</div>
+            <div class="class-count">260 种</div>
+        </div>
+        <div class="class-card" onclick="showClass('07')">
+            <div class="class-number">07</div>
+            <div class="class-name">硫酸盐</div>
+            <div class="class-en">Sulfates, Chromates, Molybdates, Tungstates</div>
+            <div class="class-count">540 种</div>
+        </div>
+        <div class="class-card" onclick="showClass('08')">
+            <div class="class-number">08</div>
+            <div class="class-name">磷酸盐、砷酸盐和钒酸盐</div>
+            <div class="class-en">Phosphates, Arsenates, Vanadates</div>
+            <div class="class-count">1,250 种</div>
+        </div>
+        <div class="class-card" onclick="showClass('09')">
+            <div class="class-number">09</div>
+            <div class="class-name">硅酸盐</div>
+            <div class="class-en">Silicates</div>
+            <div class="class-count">1,800 种</div>
+        </div>
+        <div class="class-card" onclick="showClass('10')">
+            <div class="class-number">10</div>
+            <div class="class-name">有机矿物</div>
+            <div class="class-en">Organic Compounds</div>
+            <div class="class-count">95 种</div>
+        </div>
+    </nav>
+
+    <main id="mainContent" style="display:none;">
+        <div class="breadcrumb">
+            <a href="#" onclick="goHome()">首页</a>
+            <span id="breadcrumbClass"></span>
+            <span id="breadcrumbDiv"></span>
+        </div>
+        <div id="contentArea"></div>
+    </main>
+
+    <div id="mineralModal" class="modal" style="display:none;" onclick="if(event.target===this)closeModal()">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>矿物数据库 &copy; 2026 · 基于 Strunz-Mindat 2026 (第10版) 分类系统 · 共 6,203 种 IMA 认可矿物</p>
+    </footer>
+
+    <script src="data/class-01.js?v=3"></script>
+    <script src="data/class-02.js?v=3"></script>
+    <script src="data/class-03.js?v=3"></script>
+    <script src="data/class-04.js?v=3"></script>
+    <script src="data/class-05.js?v=3"></script>
+    <script src="data/class-06.js?v=3"></script>
+    <script src="data/class-07.js?v=3"></script>
+    <script src="data/class-08.js?v=3"></script>
+    <script src="data/class-09.js?v=3"></script>
+    <script src="data/class-10.js?v=3"></script>
+    <script src="app.js?v=3"></script>
+</body>
+</html>
