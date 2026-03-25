@@ -19,9 +19,24 @@ function goHome() {
     document.getElementById('classNav').style.display = '';
     document.getElementById('mainContent').style.display = 'none';
     document.getElementById('searchResults').style.display = 'none';
-    document.getElementById('searchInput').value = '';
+    var header = document.getElementById('pageHeader');
+    header.classList.remove('align-right');
+    header.querySelector('.title').textContent = 'Strunz 矿物查询器';
+    header.querySelector('.desc').textContent = 'Strunz Mineral Query Tool';
+    document.getElementById('backBtn').style.display = 'none';
+    document.getElementById('headerActions').style.display = '';
     currentClass = null;
     currentDivision = null;
+}
+
+function goBack() {
+    if (currentDivision !== null && currentClass !== null) {
+        // 矿物列表页 → 返回分区列表页
+        showClass(currentClass);
+    } else {
+        // 分区列表页 → 返回首页
+        goHome();
+    }
 }
 
 function showClass(code) {
@@ -31,45 +46,80 @@ function showClass(code) {
     currentDivision = null;
     document.getElementById('classNav').style.display = 'none';
     document.getElementById('mainContent').style.display = '';
-    document.getElementById('breadcrumbClass').textContent = data.name;
-    document.getElementById('breadcrumbDiv').textContent = '';
+    var header = document.getElementById('pageHeader');
+    header.classList.add('align-right');
+    header.querySelector('.title').textContent = data.name;
+    header.querySelector('.desc').textContent = code + '｜' + data.en;
+    document.getElementById('backBtn').style.display = '';
+    document.getElementById('headerActions').style.display = 'none';
 
-    var html = '<h2 class="page-title">' + data.name + ' <span class="class-en">' + data.en + '</span><span class="count">(' + data.count + ' 种矿物)</span></h2>';
-    html += '<div class="division-list">';
+    var html = '<div class="class-nav">';
     for (var i = 0; i < data.divisions.length; i++) {
         var d = data.divisions[i];
-        html += '<div class="division-card" onclick="showDivision(\'' + code + '\',' + i + ')">';
-        html += '<div class="division-code">' + d.code + '</div>';
-        html += '<div class="division-name">' + d.name + '</div>';
-        html += '<div class="division-en">' + (d.en || '') + '</div>';
-        html += '<div class="division-count">' + d.count + ' 种矿物</div>';
+        html += '<div class="list-card" onclick="showDivision(\'' + code + '\',' + i + ')">';
+        html += '<div class="list-card-left">';
+        html += '<div class="list-card-title">' + d.name + '</div>';
+        html += '<div class="list-card-sub">' + d.code + '｜' + (d.en || '') + '</div>';
+        html += '</div>';
+        html += '<div class="list-card-right">';
+        html += '<span class="list-card-badge">' + d.count + '</span>';
+        html += '<span class="list-card-arrow">›</span>';
+        html += '</div>';
         html += '</div>';
     }
     html += '</div>';
     document.getElementById('contentArea').innerHTML = html;
 }
 
-function showDivision(classCode, divIndex) {
+var currentMineralPage = 0;
+var MINERALS_PER_PAGE = 30; // 10行 × 3列
+
+function showDivision(classCode, divIndex, page) {
     var data = allClassData[classCode];
     if (!data) return;
     var div = data.divisions[divIndex];
     currentDivision = divIndex;
-    document.getElementById('breadcrumbDiv').textContent = div.code + ' ' + div.name;
-
+    currentMineralPage = page || 0;
+    var header = document.getElementById('pageHeader');
+    header.classList.add('align-right');
+    header.querySelector('.title').textContent = div.name;
+    header.querySelector('.desc').textContent = div.code + '｜' + (div.en || '');
+    document.getElementById('backBtn').style.display = '';
     var minerals = div.minerals || div.species || [];
-    var html = '<span class="back-btn" onclick="showClass(\'' + classCode + '\')">← 返回</span>';
-    html += '<h2 class="page-title">' + div.code + ' ' + div.name + '<span class="count">(' + div.count + ' 种)</span></h2>';
+    var totalPages = Math.ceil(minerals.length / MINERALS_PER_PAGE);
+    var start = currentMineralPage * MINERALS_PER_PAGE;
+    var end = Math.min(start + MINERALS_PER_PAGE, minerals.length);
+
+    var html = '<div class="class-nav">';
     html += '<div class="mineral-grid">';
-    for (var i = 0; i < minerals.length; i++) {
+    for (var i = start; i < end; i++) {
         var m = minerals[i];
         html += '<div class="mineral-item" onclick=\'showMineral("' + classCode + '",' + divIndex + ',' + i + ')\'>';
         html += '<div class="mineral-cn">' + (m.cn || m.name || '未知') + '</div>';
         html += '<div class="mineral-en">' + (m.en || '') + '</div>';
-        html += '<div class="mineral-formula">' + escapeHtml(m.formula || '') + '</div>';
         html += '</div>';
     }
     html += '</div>';
+
+    if (totalPages > 1) {
+        html += '<div class="pager">';
+        if (currentMineralPage > 0) {
+            html += '<span class="pager-btn" onclick="showDivision(\'' + classCode + '\',' + divIndex + ',' + (currentMineralPage - 1) + ')">‹ 上一页</span>';
+        } else {
+            html += '<span class="pager-btn disabled">‹ 上一页</span>';
+        }
+        html += '<span class="pager-info">' + (currentMineralPage + 1) + ' / ' + totalPages + '</span>';
+        if (currentMineralPage < totalPages - 1) {
+            html += '<span class="pager-btn" onclick="showDivision(\'' + classCode + '\',' + divIndex + ',' + (currentMineralPage + 1) + ')">下一页 ›</span>';
+        } else {
+            html += '<span class="pager-btn disabled">下一页 ›</span>';
+        }
+        html += '</div>';
+    }
+
+    html += '</div>';
     document.getElementById('contentArea').innerHTML = html;
+    window.scrollTo(0, 0);
 }
 
 function showMineral(classCode, divIndex, mIndex) {
@@ -89,21 +139,25 @@ function showMineral(classCode, divIndex, mIndex) {
         uses:'用途', rarity:'稀有度', discoveryYear:'发现年份'
     };
 
-    var html = '<div class="modal-title">' + (m.cn || m.name || '') + '</div>';
-    html += '<div class="modal-en">' + (m.en || '') + '</div>';
-    html += '<div class="modal-formula">' + escapeHtml(m.formula || '') + '</div>';
-    html += '<div class="props-grid">';
+    var enFormula = (m.en || '');
+    if (m.formula) enFormula += '｜' + escapeHtml(m.formula);
+    var headerHtml = '<div class="modal-header">';
+    headerHtml += '<div class="modal-title">' + (m.cn || m.name || '') + '</div>';
+    headerHtml += '<div class="modal-en">' + enFormula + '</div>';
+    headerHtml += '</div>';
 
+    var bodyHtml = '<table class="props-table">';
     var keys = Object.keys(propLabels);
     for (var i = 0; i < keys.length; i++) {
         var k = keys[i];
         if (k === 'formula') continue;
         var val = m[k];
         if (val === undefined || val === null || val === '') continue;
-        html += '<div class="prop-item"><div class="prop-label">' + propLabels[k] + '</div><div class="prop-value">' + escapeHtml(String(val)) + '</div></div>';
+        bodyHtml += '<tr><td class="prop-label">' + propLabels[k] + '</td><td class="prop-value">' + escapeHtml(String(val)) + '</td></tr>';
     }
-    html += '</div>';
-    document.getElementById('modalBody').innerHTML = html;
+    bodyHtml += '</table>';
+    document.getElementById('modalHeader').innerHTML = headerHtml;
+    document.getElementById('modalBody').innerHTML = bodyHtml;
     document.getElementById('mineralModal').style.display = 'flex';
 }
 
@@ -116,6 +170,8 @@ function escapeHtml(s) {
 }
 
 function handleSearch(query) {
+    var placeholder = document.getElementById('searchPlaceholder');
+    if (placeholder) { placeholder.classList.toggle('hidden', query.length > 0); }
     query = query.trim().toLowerCase();
     var resultsDiv = document.getElementById('searchResults');
     if (query.length < 2) { resultsDiv.style.display = 'none'; return; }
@@ -138,7 +194,7 @@ function handleSearch(query) {
         }
     }
     if (results.length === 0) {
-        resultsDiv.innerHTML = '<div style="text-align:center;padding:20px;color:#8892b0;">未找到匹配的矿物</div>';
+        resultsDiv.innerHTML = '<div style="text-align:center;padding:20px;color:#999;">未找到匹配的矿物</div>';
     } else {
         var html = '';
         for (var r = 0; r < results.length; r++) {
@@ -159,3 +215,13 @@ function handleSearch(query) {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeModal();
 });
+
+function toggleSearch() {
+    // TODO: 实现搜索功能
+    alert('搜索功能开发中');
+}
+
+function toggleFavorites() {
+    // TODO: 实现收藏功能
+    alert('收藏功能开发中');
+}

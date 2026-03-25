@@ -4,114 +4,160 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>矿物数据库 - Strunz分类系统</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
-    <header>
-        <h1>🪨 矿物数据库</h1>
-        <p class="subtitle">基于 Strunz 第10版分类系统 · 共收录 6,203 种矿物</p>
-    </header>
-
-    <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="搜索矿物名称、化学式、英文名..." oninput="handleSearch(this.value)">
-        <span class="search-icon">🔍</span>
+<div class="page-wrapper">
+    <div id="pageHeader" class="page-header">
+        <span id="backBtn" class="header-back" onclick="goBack()" style="display:none;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </span>
+        <div class="header-text">
+            <div class="title">Strunz 矿物查询器</div>
+            <div class="desc">Strunz Mineral Query Tool</div>
+        </div>
+        <div id="headerActions" class="header-actions">
+            <span class="header-action-btn" onclick="toggleSearch()" title="搜索">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <span class="header-action-btn" onclick="toggleFavorites()" title="收藏">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            </span>
+        </div>
     </div>
 
     <div id="searchResults" class="search-results" style="display:none;"></div>
 
     <nav id="classNav" class="class-nav">
-        <div class="class-card" onclick="showClass('01')">
-            <div class="class-number">01</div>
-            <div class="class-name">元素矿物</div>
-            <div class="class-en">Elements</div>
-            <div class="class-count">78 种</div>
+        <div class="list-card" onclick="showClass('01')">
+            <div class="list-card-left">
+                <div class="list-card-title">元素矿物</div>
+                <div class="list-card-sub">01｜Elements</div>
+            </div>
+            <div class="list-card-right">
+                <span class="list-card-badge">78</span>
+                <span class="list-card-arrow">›</span>
+            </div>
         </div>
-        <div class="class-card" onclick="showClass('02')">
-            <div class="class-number">02</div>
-            <div class="class-name">硫化物和硫盐</div>
-            <div class="class-en">Sulfides & Sulfosalts</div>
-            <div class="class-count">720 种</div>
+        <div class="list-card" onclick="showClass('02')">
+            <div class="list-card-left">
+                <div class="list-card-title">硫化物和硫盐</div>
+                <div class="list-card-sub">02｜Sulfides &amp; Sulfosalts</div>
+            </div>
+            <div class="list-card-right">
+                <span class="list-card-badge">720</span>
+                <span class="list-card-arrow">›</span>
+            </div>
         </div>
-        <div class="class-card" onclick="showClass('03')">
-            <div class="class-number">03</div>
-            <div class="class-name">卤化物</div>
-            <div class="class-en">Halides</div>
-            <div class="class-count">152 种</div>
+        <div class="list-card" onclick="showClass('03')">
+            <div class="list-card-left">
+                <div class="list-card-title">卤化物</div>
+                <div class="list-card-sub">03｜Halides</div>
+            </div>
+            <div class="list-card-right">
+                <span class="list-card-badge">152</span>
+                <span class="list-card-arrow">›</span>
+            </div>
         </div>
-        <div class="class-card" onclick="showClass('04')">
-            <div class="class-number">04</div>
-            <div class="class-name">氧化物和氢氧化物</div>
-            <div class="class-en">Oxides & Hydroxides</div>
-            <div class="class-count">840 种</div>
+        <div class="list-card" onclick="showClass('04')">
+            <div class="list-card-left">
+                <div class="list-card-title">氧化物和氢氧化物</div>
+                <div class="list-card-sub">04｜Oxides &amp; Hydroxides</div>
+            </div>
+            <div class="list-card-right">
+                <span class="list-card-badge">840</span>
+                <span class="list-card-arrow">›</span>
+            </div>
         </div>
-        <div class="class-card" onclick="showClass('05')">
-            <div class="class-number">05</div>
-            <div class="class-name">碳酸盐和硝酸盐</div>
-            <div class="class-en">Carbonates & Nitrates</div>
-            <div class="class-count">468 种</div>
+        <div class="list-card" onclick="showClass('05')">
+            <div class="list-card-left">
+                <div class="list-card-title">碳酸盐和硝酸盐</div>
+                <div class="list-card-sub">05｜Carbonates &amp; Nitrates</div>
+            </div>
+            <div class="list-card-right">
+                <span class="list-card-badge">468</span>
+                <span class="list-card-arrow">›</span>
+            </div>
         </div>
-        <div class="class-card" onclick="showClass('06')">
-            <div class="class-number">06</div>
-            <div class="class-name">硼酸盐</div>
-            <div class="class-en">Borates</div>
-            <div class="class-count">260 种</div>
+        <div class="list-card" onclick="showClass('06')">
+            <div class="list-card-left">
+                <div class="list-card-title">硼酸盐</div>
+                <div class="list-card-sub">06｜Borates</div>
+            </div>
+            <div class="list-card-right">
+                <span class="list-card-badge">260</span>
+                <span class="list-card-arrow">›</span>
+            </div>
         </div>
-        <div class="class-card" onclick="showClass('07')">
-            <div class="class-number">07</div>
-            <div class="class-name">硫酸盐</div>
-            <div class="class-en">Sulfates, Chromates, Molybdates, Tungstates</div>
-            <div class="class-count">540 种</div>
+        <div class="list-card" onclick="showClass('07')">
+            <div class="list-card-left">
+                <div class="list-card-title">硫酸盐</div>
+                <div class="list-card-sub">07｜Sulfates, Chromates, Molybdates, Tungstates</div>
+            </div>
+            <div class="list-card-right">
+                <span class="list-card-badge">540</span>
+                <span class="list-card-arrow">›</span>
+            </div>
         </div>
-        <div class="class-card" onclick="showClass('08')">
-            <div class="class-number">08</div>
-            <div class="class-name">磷酸盐、砷酸盐和钒酸盐</div>
-            <div class="class-en">Phosphates, Arsenates, Vanadates</div>
-            <div class="class-count">1,250 种</div>
+        <div class="list-card" onclick="showClass('08')">
+            <div class="list-card-left">
+                <div class="list-card-title">磷酸盐、砷酸盐和钒酸盐</div>
+                <div class="list-card-sub">08｜Phosphates, Arsenates, Vanadates</div>
+            </div>
+            <div class="list-card-right">
+                <span class="list-card-badge">1250</span>
+                <span class="list-card-arrow">›</span>
+            </div>
         </div>
-        <div class="class-card" onclick="showClass('09')">
-            <div class="class-number">09</div>
-            <div class="class-name">硅酸盐</div>
-            <div class="class-en">Silicates</div>
-            <div class="class-count">1,800 种</div>
+        <div class="list-card" onclick="showClass('09')">
+            <div class="list-card-left">
+                <div class="list-card-title">硅酸盐</div>
+                <div class="list-card-sub">09｜Silicates</div>
+            </div>
+            <div class="list-card-right">
+                <span class="list-card-badge">1800</span>
+                <span class="list-card-arrow">›</span>
+            </div>
         </div>
-        <div class="class-card" onclick="showClass('10')">
-            <div class="class-number">10</div>
-            <div class="class-name">有机矿物</div>
-            <div class="class-en">Organic Compounds</div>
-            <div class="class-count">95 种</div>
+        <div class="list-card" onclick="showClass('10')">
+            <div class="list-card-left">
+                <div class="list-card-title">有机矿物</div>
+                <div class="list-card-sub">10｜Organic Compounds</div>
+            </div>
+            <div class="list-card-right">
+                <span class="list-card-badge">95</span>
+                <span class="list-card-arrow">›</span>
+            </div>
         </div>
     </nav>
 
     <main id="mainContent" style="display:none;">
-        <div class="breadcrumb">
-            <a href="#" onclick="goHome()">首页</a>
-            <span id="breadcrumbClass"></span>
-            <span id="breadcrumbDiv"></span>
-        </div>
         <div id="contentArea"></div>
     </main>
 
     <div id="mineralModal" class="modal" style="display:none;" onclick="if(event.target===this)closeModal()">
         <div class="modal-content">
             <span class="modal-close" onclick="closeModal()">&times;</span>
-            <div id="modalBody"></div>
+            <div id="modalHeader"></div>
+            <div id="modalBody" class="modal-body-scroll"></div>
         </div>
     </div>
 
     <footer>
-        <p>矿物数据库 &copy; 2026 · 基于 Strunz-Mindat 2026 (第10版) 分类系统 · 共 6,203 种 IMA 认可矿物</p>
+        <p>收录6,203种 IMA 备案矿物｜基于 Strunz-Mindat（第10版）系统分类</p>
     </footer>
+</div><!-- end .page-wrapper -->
 
-    <script src="data/class-01.js?v=3"></script>
-    <script src="data/class-02.js?v=3"></script>
-    <script src="data/class-03.js?v=3"></script>
-    <script src="data/class-04.js?v=3"></script>
-    <script src="data/class-05.js?v=3"></script>
-    <script src="data/class-06.js?v=3"></script>
-    <script src="data/class-07.js?v=3"></script>
-    <script src="data/class-08.js?v=3"></script>
-    <script src="data/class-09.js?v=3"></script>
-    <script src="data/class-10.js?v=3"></script>
-    <script src="app.js?v=3"></script>
+    <script src="data/class-01.js?v=7"></script>
+    <script src="data/class-02.js?v=7"></script>
+    <script src="data/class-03.js?v=7"></script>
+    <script src="data/class-04.js?v=7"></script>
+    <script src="data/class-05.js?v=7"></script>
+    <script src="data/class-06.js?v=7"></script>
+    <script src="data/class-07.js?v=7"></script>
+    <script src="data/class-08.js?v=7"></script>
+    <script src="data/class-09.js?v=7"></script>
+    <script src="data/class-10.js?v=7"></script>
+    <script src="app.js?v=7"></script>
 </body>
 </html>
