@@ -19,7 +19,9 @@ function goHome() {
     document.getElementById('classNav').style.display = '';
     document.getElementById('mainContent').style.display = 'none';
     document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('favPage').style.display = 'none';
     var header = document.getElementById('pageHeader');
+    header.style.display = '';
     header.classList.remove('align-right');
     header.querySelector('.title').textContent = 'Strunz 矿物查询器';
     header.querySelector('.desc').textContent = 'Strunz Mineral Query Tool';
@@ -94,8 +96,9 @@ function showDivision(classCode, divIndex, page) {
     html += '<div class="mineral-grid">';
     for (var i = start; i < end; i++) {
         var m = minerals[i];
+        var favClass = isFavorited(classCode, divIndex, i) ? ' fav-highlight' : '';
         html += '<div class="mineral-item" onclick=\'showMineral("' + classCode + '",' + divIndex + ',' + i + ')\'>';
-        html += '<div class="mineral-cn">' + (m.cn || m.name || '未知') + '</div>';
+        html += '<div class="mineral-cn' + favClass + '">' + (m.cn || m.name || '未知') + '</div>';
         html += '<div class="mineral-en">' + (m.en || '') + '</div>';
         html += '</div>';
     }
@@ -139,11 +142,14 @@ function showMineral(classCode, divIndex, mIndex) {
         uses:'用途', rarity:'稀有度', discoveryYear:'发现年份'
     };
 
-    var enFormula = (m.en || '');
-    if (m.formula) enFormula += '｜' + escapeHtml(m.formula);
+    var className = data.name || '';
+    var divName = data.divisions[divIndex].name || '';
+    var subLine = className + '｜' + divName + '｜' + (m.en || '');
+    if (m.formula) subLine += '｜' + escapeHtml(m.formula);
+    var faved = isFavorited(classCode, divIndex, mIndex);
     var html = '<div class="modal-header">';
-    html += '<div class="modal-title">' + (m.cn || m.name || '') + '</div>';
-    html += '<div class="modal-en">' + enFormula + '</div>';
+    html += '<div class="modal-title' + (faved ? ' fav-highlight' : '') + '" id="modalTitleText" style="cursor:pointer;" onclick="handleTitleFav(this,\'' + classCode + '\',' + divIndex + ',' + mIndex + ')">' + (m.cn || m.name || '') + '</div>';
+    html += '<div class="modal-en">' + subLine + '</div>';
     html += '</div>';
 
     html += '<div class="props-grid2">';
@@ -160,8 +166,24 @@ function showMineral(classCode, divIndex, mIndex) {
     document.getElementById('mineralModal').style.display = 'flex';
 }
 
+function handleTitleFav(el, classCode, divIndex, mIndex) {
+    var isFaved = toggleFavorite(classCode, divIndex, mIndex);
+    var title = document.getElementById('modalTitleText');
+    if (title) {
+        if (isFaved) {
+            title.classList.add('fav-highlight');
+        } else {
+            title.classList.remove('fav-highlight');
+        }
+    }
+}
+
 function closeModal() {
     document.getElementById('mineralModal').style.display = 'none';
+    // 刷新当前列表页的收藏状态
+    if (currentClass && currentDivision !== null) {
+        showDivision(currentClass, currentDivision, currentMineralPage);
+    }
 }
 
 function escapeHtml(s) {
@@ -212,15 +234,259 @@ function handleSearch(query) {
 }
 
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Escape') {
+        closeModal();
+        closeSearchModal();
+    }
 });
 
 function toggleSearch() {
-    // TODO: 实现搜索功能
-    alert('搜索功能开发中');
+    document.getElementById('searchModal').style.display = 'flex';
+    document.getElementById('searchInput').value = '';
+    document.getElementById('searchModalResults').innerHTML = '<div class="search-modal-empty">输入关键词开始搜索</div>';
+    setTimeout(function() { document.getElementById('searchInput').focus(); }, 100);
+}
+
+function closeSearchModal() {
+    document.getElementById('searchModal').style.display = 'none';
+}
+
+function handleSearchModal(query) {
+    query = (query || '').trim().toLowerCase();
+    var resultsDiv = document.getElementById('searchModalResults');
+    if (query.length < 2) {
+        resultsDiv.innerHTML = '<div class="search-modal-empty">输入关键词开始搜索</div>';
+        return;
+    }
+    var results = [];
+    var codes = Object.keys(allClassData);
+    for (var ci = 0; ci < codes.length && results.length < 50; ci++) {
+        var cd = allClassData[codes[ci]];
+        if (!cd) continue;
+        for (var di = 0; di < cd.divisions.length && results.length < 50; di++) {
+            var minerals = cd.divisions[di].minerals || cd.divisions[di].species || [];
+            for (var mi = 0; mi < minerals.length && results.length < 50; mi++) {
+                var m = minerals[mi];
+                var cn = (m.cn || m.name || '').toLowerCase();
+                var en = (m.en || '').toLowerCase();
+                var f = (m.formula || '').toLowerCase();
+                if (cn.indexOf(query) !== -1 || en.indexOf(query) !== -1 || f.indexOf(query) !== -1) {
+                    results.push({ m: m, classCode: codes[ci], divIndex: di, mIndex: mi });
+                }
+            }
+        }
+    }
+    if (results.length === 0) {
+        resultsDiv.innerHTML = '<div class="search-modal-empty">未找到匹配的矿物</div>';
+    } else {
+        var html = '';
+        for (var r = 0; r < results.length; r++) {
+            var item = results[r];
+            html += '<div class="result-item" onclick=\'closeSearchModal();showMineral("' + item.classCode + '",' + item.divIndex + ',' + item.mIndex + ')\'>';
+            html += '<span class="result-cn">' + escapeHtml(item.m.cn || item.m.name || '') + '</span>';
+            html += '<span class="result-en">' + escapeHtml(item.m.en || '') + '</span>';
+            if (item.m.formula) html += '<div class="result-formula">' + escapeHtml(item.m.formula) + '</div>';
+            html += '</div>';
+        }
+        html += '<div class="result-count">共找到 ' + results.length + ' 种矿物' + (results.length >= 50 ? '（仅显示前50条）' : '') + '</div>';
+        resultsDiv.innerHTML = html;
+    }
+}
+
+// ==================== Supabase 配置 ====================
+var SUPABASE_URL = 'https://zrliaxipbmspkztbjdsr.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpybGlheGlwYm1zcGt6dGJqZHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0ODc4NjMsImV4cCI6MjA5MDA2Mzg2M30.2fCodpAq1LtDWm3qfepD0mF9qD5BosREfR3yLJ8dHV4';
+var SUPABASE_TABLE = 'mineral_favorites';
+
+function supabaseHeaders() {
+    return {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+    };
+}
+
+// ==================== 收藏功能 ====================
+var FAV_KEY = 'mineral_favorites';
+var FAV_PER_PAGE = 20; // 10行 × 2列
+var currentFavPage = 0;
+var favSynced = false;
+
+function getFavorites() {
+    try {
+        var raw = localStorage.getItem(FAV_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+}
+
+function saveFavorites(favs) {
+    localStorage.setItem(FAV_KEY, JSON.stringify(favs));
+}
+
+function isFavorited(classCode, divIndex, mIndex) {
+    var favs = getFavorites();
+    for (var i = 0; i < favs.length; i++) {
+        if (favs[i].classCode === classCode && favs[i].divIndex === divIndex && favs[i].mIndex === mIndex) return true;
+    }
+    return false;
+}
+
+function toggleFavorite(classCode, divIndex, mIndex) {
+    var favs = getFavorites();
+    var found = -1;
+    for (var i = 0; i < favs.length; i++) {
+        if (favs[i].classCode === classCode && favs[i].divIndex === divIndex && favs[i].mIndex === mIndex) { found = i; break; }
+    }
+    if (found >= 0) {
+        favs.splice(found, 1);
+        supabaseDeleteFav(classCode, divIndex, mIndex);
+    } else {
+        favs.push({ classCode: classCode, divIndex: divIndex, mIndex: mIndex, time: Date.now() });
+        supabaseInsertFav(classCode, divIndex, mIndex);
+    }
+    saveFavorites(favs);
+    return found < 0; // true=刚收藏, false=取消收藏
+}
+
+// ==================== Supabase 云端同步 ====================
+function supabaseInsertFav(classCode, divIndex, mIndex) {
+    try {
+        fetch(SUPABASE_URL + '/rest/v1/' + SUPABASE_TABLE, {
+            method: 'POST',
+            headers: supabaseHeaders(),
+            body: JSON.stringify({
+                class_code: classCode,
+                div_index: divIndex,
+                m_index: mIndex,
+                created_at: new Date().toISOString()
+            })
+        }).catch(function(e) { console.warn('Supabase insert error:', e); });
+    } catch (e) { console.warn('Supabase insert error:', e); }
+}
+
+function supabaseDeleteFav(classCode, divIndex, mIndex) {
+    try {
+        var url = SUPABASE_URL + '/rest/v1/' + SUPABASE_TABLE
+            + '?class_code=eq.' + encodeURIComponent(classCode)
+            + '&div_index=eq.' + divIndex
+            + '&m_index=eq.' + mIndex;
+        fetch(url, {
+            method: 'DELETE',
+            headers: supabaseHeaders()
+        }).catch(function(e) { console.warn('Supabase delete error:', e); });
+    } catch (e) { console.warn('Supabase delete error:', e); }
+}
+
+function supabaseSyncFavorites() {
+    try {
+        fetch(SUPABASE_URL + '/rest/v1/' + SUPABASE_TABLE + '?select=class_code,div_index,m_index,created_at&order=created_at.asc', {
+            method: 'GET',
+            headers: supabaseHeaders()
+        }).then(function(res) {
+            if (!res.ok) { console.warn('Supabase sync failed:', res.status); return; }
+            return res.json();
+        }).then(function(rows) {
+            if (!rows || !Array.isArray(rows)) return;
+            var cloudFavs = [];
+            for (var i = 0; i < rows.length; i++) {
+                cloudFavs.push({
+                    classCode: rows[i].class_code,
+                    divIndex: rows[i].div_index,
+                    mIndex: rows[i].m_index,
+                    time: new Date(rows[i].created_at).getTime()
+                });
+            }
+            // 合并：云端为准，补充本地独有的
+            var localFavs = getFavorites();
+            var merged = cloudFavs.slice();
+            for (var j = 0; j < localFavs.length; j++) {
+                var lf = localFavs[j];
+                var exists = false;
+                for (var k = 0; k < merged.length; k++) {
+                    if (merged[k].classCode === lf.classCode && merged[k].divIndex === lf.divIndex && merged[k].mIndex === lf.mIndex) { exists = true; break; }
+                }
+                if (!exists) {
+                    merged.push(lf);
+                    supabaseInsertFav(lf.classCode, lf.divIndex, lf.mIndex);
+                }
+            }
+            saveFavorites(merged);
+            favSynced = true;
+            console.log('Supabase sync OK: ' + merged.length + ' favorites');
+        }).catch(function(e) { console.warn('Supabase sync error:', e); });
+    } catch (e) { console.warn('Supabase sync error:', e); }
+}
+
+// 页面加载时自动同步
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', supabaseSyncFavorites);
+} else {
+    supabaseSyncFavorites();
 }
 
 function toggleFavorites() {
-    // TODO: 实现收藏功能
-    alert('收藏功能开发中');
+    showFavPage(0);
+}
+
+function showFavPage(page) {
+    currentFavPage = page || 0;
+    // 隐藏其他页面
+    document.getElementById('classNav').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'none';
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('favPage').style.display = '';
+    document.getElementById('pageHeader').style.display = 'none';
+
+    var favs = getFavorites();
+    var totalPages = Math.ceil(favs.length / FAV_PER_PAGE) || 1;
+    if (currentFavPage >= totalPages) currentFavPage = totalPages - 1;
+    var start = currentFavPage * FAV_PER_PAGE;
+    var end = Math.min(start + FAV_PER_PAGE, favs.length);
+
+    var html = '';
+    if (favs.length === 0) {
+        html = '<div class="fav-empty">还没有收藏任何矿物</div>';
+    } else {
+        html += '<div class="fav-grid">';
+        for (var i = start; i < end; i++) {
+            var f = favs[i];
+            var data = allClassData[f.classCode];
+            if (!data) continue;
+            var div = data.divisions[f.divIndex];
+            if (!div) continue;
+            var minerals = div.minerals || div.species || [];
+            var m = minerals[f.mIndex];
+            if (!m) continue;
+            html += '<div class="fav-item" onclick=\'showMineral("' + f.classCode + '",' + f.divIndex + ',' + f.mIndex + ')\'>';
+            html += '<div class="fav-item-cn">' + escapeHtml(m.cn || m.name || '未知') + '</div>';
+            html += '<div class="fav-item-en">' + escapeHtml(m.en || '') + '</div>';
+            html += '</div>';
+        }
+        html += '</div>';
+
+        if (totalPages > 1) {
+            html += '<div class="pager">';
+            if (currentFavPage > 0) {
+                html += '<span class="pager-btn" onclick="showFavPage(' + (currentFavPage - 1) + ')">‹ 上一页</span>';
+            } else {
+                html += '<span class="pager-btn disabled">‹ 上一页</span>';
+            }
+            html += '<span class="pager-info">' + (currentFavPage + 1) + ' / ' + totalPages + '</span>';
+            if (currentFavPage < totalPages - 1) {
+                html += '<span class="pager-btn" onclick="showFavPage(' + (currentFavPage + 1) + ')">下一页 ›</span>';
+            } else {
+                html += '<span class="pager-btn disabled">下一页 ›</span>';
+            }
+            html += '</div>';
+        }
+    }
+    document.getElementById('favContent').innerHTML = html;
+    window.scrollTo(0, 0);
+}
+
+function closeFavPage() {
+    document.getElementById('favPage').style.display = 'none';
+    document.getElementById('pageHeader').style.display = '';
+    goHome();
 }
