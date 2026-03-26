@@ -101,23 +101,26 @@ function showDivision(classCode, divIndex, page) {
         html += '<div class="mineral-en">' + (m.en || '') + '</div>';
         html += '</div>';
     }
+    // 不足30个时填充占位div，保证始终占满10行×3列
+    var rendered = end - start;
+    for (var p = rendered; p < MINERALS_PER_PAGE; p++) {
+        html += '<div class="mineral-placeholder"></div>';
+    }
     html += '</div>';
 
-    if (totalPages > 1) {
-        html += '<div class="pager">';
-        if (currentMineralPage > 0) {
-            html += '<span class="pager-btn" onclick="showDivision(\'' + classCode + '\',' + divIndex + ',' + (currentMineralPage - 1) + ')">‹ 上一页</span>';
-        } else {
-            html += '<span class="pager-btn disabled">‹ 上一页</span>';
-        }
-        html += '<span class="pager-info">' + (currentMineralPage + 1) + ' / ' + totalPages + '</span>';
-        if (currentMineralPage < totalPages - 1) {
-            html += '<span class="pager-btn" onclick="showDivision(\'' + classCode + '\',' + divIndex + ',' + (currentMineralPage + 1) + ')">下一页 ›</span>';
-        } else {
-            html += '<span class="pager-btn disabled">下一页 ›</span>';
-        }
-        html += '</div>';
+    html += '<div class="pager">';
+    if (currentMineralPage > 0) {
+        html += '<span class="pager-btn" onclick="showDivision(\'' + classCode + '\',' + divIndex + ',' + (currentMineralPage - 1) + ')">‹ 上一页</span>';
+    } else {
+        html += '<span class="pager-btn disabled">‹ 上一页</span>';
     }
+    html += '<span class="pager-info">' + (totalPages > 0 ? (currentMineralPage + 1) + ' / ' + totalPages : '0 / 0') + '</span>';
+    if (currentMineralPage < totalPages - 1) {
+        html += '<span class="pager-btn" onclick="showDivision(\'' + classCode + '\',' + divIndex + ',' + (currentMineralPage + 1) + ')">下一页 ›</span>';
+    } else {
+        html += '<span class="pager-btn disabled">下一页 ›</span>';
+    }
+    html += '</div>';
 
     html += '</div>';
     document.getElementById('contentArea').innerHTML = html;
@@ -187,8 +190,11 @@ function handleTitleFav(el, classCode, divIndex, mIndex) {
 
 function closeModal() {
     document.getElementById('mineralModal').style.display = 'none';
-    // 刷新当前列表页的收藏状态
-    if (currentClass && currentDivision !== null) {
+    // 刷新当前可见页面的收藏状态
+    var favPage = document.getElementById('favPage');
+    if (favPage && favPage.style.display !== 'none') {
+        showFavPage(currentFavPage);
+    } else if (currentClass && currentDivision !== null) {
         showDivision(currentClass, currentDivision, currentMineralPage);
     }
 }
@@ -448,7 +454,7 @@ function supabaseHeaders() {
 
 // ==================== 收藏功能 ====================
 var FAV_KEY = 'mineral_favorites';
-var FAV_PER_PAGE = 20; // 10行 × 2列
+var FAV_PER_PAGE = 8; // 4行 × 2列
 var currentFavPage = 0;
 var favSynced = false;
 
@@ -517,16 +523,16 @@ function supabaseDeleteFav(classCode, divIndex, mIndex) {
     } catch (e) { console.warn('Supabase delete error:', e); }
 }
 
-function supabaseSyncFavorites() {
+function supabaseSyncFavorites(callback) {
     try {
         fetch(SUPABASE_URL + '/rest/v1/' + SUPABASE_TABLE + '?select=class_code,div_index,m_index,created_at&order=created_at.asc', {
             method: 'GET',
             headers: supabaseHeaders()
         }).then(function(res) {
-            if (!res.ok) { console.warn('Supabase sync failed:', res.status); return; }
+            if (!res.ok) { console.warn('Supabase sync failed:', res.status); if (callback) callback(false); return; }
             return res.json();
         }).then(function(rows) {
-            if (!rows || !Array.isArray(rows)) return;
+            if (!rows || !Array.isArray(rows)) { if (callback) callback(false); return; }
             var cloudFavs = [];
             for (var i = 0; i < rows.length; i++) {
                 cloudFavs.push({
@@ -536,32 +542,66 @@ function supabaseSyncFavorites() {
                     time: new Date(rows[i].created_at).getTime()
                 });
             }
-            // 合并：云端为准，补充本地独有的
-            var localFavs = getFavorites();
-            var merged = cloudFavs.slice();
-            for (var j = 0; j < localFavs.length; j++) {
-                var lf = localFavs[j];
-                var exists = false;
-                for (var k = 0; k < merged.length; k++) {
-                    if (merged[k].classCode === lf.classCode && merged[k].divIndex === lf.divIndex && merged[k].mIndex === lf.mIndex) { exists = true; break; }
-                }
-                if (!exists) {
-                    merged.push(lf);
-                    supabaseInsertFav(lf.classCode, lf.divIndex, lf.mIndex);
-                }
-            }
-            saveFavorites(merged);
+            // 云端覆盖本地
+            saveFavorites(cloudFavs);
             favSynced = true;
-            console.log('Supabase sync OK: ' + merged.length + ' favorites');
-        }).catch(function(e) { console.warn('Supabase sync error:', e); });
-    } catch (e) { console.warn('Supabase sync error:', e); }
+            console.log('云端覆盖本地完成: ' + cloudFavs.length + ' 条收藏');
+            if (callback) callback(true);
+        }).catch(function(e) { console.warn('Supabase sync error:', e); if (callback) callback(false); });
+    } catch (e) { console.warn('Supabase sync error:', e); if (callback) callback(false); }
 }
 
-// 页面加载时自动同步
+// 同步收藏：以本地为准覆盖云端（先清空云端，再逐条上传本地数据）
+function syncFavToCloud() {
+    var btn = event && event.target;
+    var originalColor = btn ? btn.style.color : '';
+    if (btn) { btn.style.color = '#E5E5E5'; btn.style.pointerEvents = 'none'; }
+    var localFavs = getFavorites();
+    // 第一步：删除云端全部数据
+    fetch(SUPABASE_URL + '/rest/v1/' + SUPABASE_TABLE + '?id=gt.0', {
+        method: 'DELETE',
+        headers: supabaseHeaders()
+    }).then(function(res) {
+        if (!res.ok) { throw new Error('清空云端失败: ' + res.status); }
+        // 第二步：把本地收藏逐条上传
+        if (localFavs.length === 0) { return Promise.resolve(); }
+        var rows = [];
+        for (var i = 0; i < localFavs.length; i++) {
+            rows.push({
+                class_code: localFavs[i].classCode,
+                div_index: localFavs[i].divIndex,
+                m_index: localFavs[i].mIndex
+            });
+        }
+        return fetch(SUPABASE_URL + '/rest/v1/' + SUPABASE_TABLE, {
+            method: 'POST',
+            headers: supabaseHeaders(),
+            body: JSON.stringify(rows)
+        });
+    }).then(function(res) {
+        if (res && !res.ok) { throw new Error('上传云端失败: ' + res.status); }
+        if (btn) { btn.style.color = originalColor; btn.style.pointerEvents = ''; }
+        console.log('本地 ' + localFavs.length + ' 条收藏已覆盖云端');
+        showFavPage(currentFavPage);
+    }).catch(function(e) {
+        console.warn('同步到云端失败:', e);
+        if (btn) { btn.style.color = originalColor; btn.style.pointerEvents = ''; }
+        showFavPage(currentFavPage);
+    });
+}
+
+// 页面加载时自动同步并进入收藏页
+function initApp() {
+    showFavPage(0);
+    document.querySelector('.page-wrapper').classList.add('ready');
+    supabaseSyncFavorites(function() {
+        showFavPage(0);
+    });
+}
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', supabaseSyncFavorites);
+    document.addEventListener('DOMContentLoaded', initApp);
 } else {
-    supabaseSyncFavorites();
+    initApp();
 }
 
 function toggleFavorites() {
@@ -584,52 +624,51 @@ function showFavPage(page) {
     var end = Math.min(start + FAV_PER_PAGE, favs.length);
 
     var html = '';
-    if (favs.length === 0) {
-        html = '<div class="fav-empty">还没有收藏任何矿物</div>';
-    } else {
-        html += '<div class="fav-grid">';
-        for (var i = start; i < end; i++) {
-            var f = favs[i];
-            var data = allClassData[f.classCode];
-            if (!data) continue;
-            var div = data.divisions[f.divIndex];
-            if (!div) continue;
-            var minerals = div.minerals || div.species || [];
-            var m = minerals[f.mIndex];
-            if (!m) continue;
-            html += '<div class="fav-item" onclick=\'showMineral("' + f.classCode + '",' + f.divIndex + ',' + f.mIndex + ')\'>';
-            html += '<div class="fav-item-cn"><span class="fav-highlight">' + escapeHtml(m.cn || m.name || '未知') + '</span></div>';
-            html += '<div class="fav-item-en">' + escapeHtml(m.en || '') + '</div>';
-            var favAliases = getMineralAliases(m.en);
-            html += '<div class="fav-item-aliases">';
-            if (favAliases.length > 0) {
-                for (var ai = 0; ai < favAliases.length; ai++) {
-                    html += '<span class="alias-tag">' + escapeHtml(favAliases[ai]) + '</span>';
-                }
-            } else {
-                html += '<span class="alias-tag">' + escapeHtml(m.cn || m.name || '未知') + '</span>';
+    var itemCount = end - start;
+    html += '<div class="fav-grid">';
+    for (var i = start; i < end; i++) {
+        var f = favs[i];
+        var data = allClassData[f.classCode];
+        if (!data) { itemCount--; continue; }
+        var div = data.divisions[f.divIndex];
+        if (!div) { itemCount--; continue; }
+        var minerals = div.minerals || div.species || [];
+        var m = minerals[f.mIndex];
+        if (!m) { itemCount--; continue; }
+        html += '<div class="fav-item" onclick=\'showMineral("' + f.classCode + '",' + f.divIndex + ',' + f.mIndex + ')\'>';
+        html += '<div class="fav-item-cn"><span class="fav-highlight">' + escapeHtml(m.cn || m.name || '未知') + '</span></div>';
+        html += '<div class="fav-item-en">' + escapeHtml(m.en || '') + '</div>';
+        var favAliases = getMineralAliases(m.en);
+        html += '<div class="fav-item-aliases">';
+        if (favAliases.length > 0) {
+            for (var ai = 0; ai < favAliases.length; ai++) {
+                html += '<span class="alias-tag">' + escapeHtml(favAliases[ai]) + '</span>';
             }
-            html += '</div>';
-            html += '</div>';
+        } else {
+            html += '<span class="alias-tag">' + escapeHtml(m.cn || m.name || '未知') + '</span>';
         }
         html += '</div>';
-
-        if (totalPages > 1) {
-            html += '<div class="pager">';
-            if (currentFavPage > 0) {
-                html += '<span class="pager-btn" onclick="showFavPage(' + (currentFavPage - 1) + ')">‹ 上一页</span>';
-            } else {
-                html += '<span class="pager-btn disabled">‹ 上一页</span>';
-            }
-            html += '<span class="pager-info">' + (currentFavPage + 1) + ' / ' + totalPages + '</span>';
-            if (currentFavPage < totalPages - 1) {
-                html += '<span class="pager-btn" onclick="showFavPage(' + (currentFavPage + 1) + ')">下一页 ›</span>';
-            } else {
-                html += '<span class="pager-btn disabled">下一页 ›</span>';
-            }
-            html += '</div>';
-        }
+        html += '</div>';
     }
+    // 不足8个时用虚线占位框补齐
+    for (var p = itemCount; p < FAV_PER_PAGE; p++) {
+        html += '<div class="fav-item-placeholder"></div>';
+    }
+    html += '</div>';
+
+    html += '<div class="pager">';
+    if (currentFavPage > 0) {
+        html += '<span class="pager-btn" onclick="showFavPage(' + (currentFavPage - 1) + ')">‹ 上一页</span>';
+    } else {
+        html += '<span class="pager-btn disabled">‹ 上一页</span>';
+    }
+    html += '<span class="pager-info">' + (totalPages > 0 ? (currentFavPage + 1) + ' / ' + totalPages : '0 / 0') + '</span>';
+    if (currentFavPage < totalPages - 1) {
+        html += '<span class="pager-btn" onclick="showFavPage(' + (currentFavPage + 1) + ')">下一页 ›</span>';
+    } else {
+        html += '<span class="pager-btn disabled">下一页 ›</span>';
+    }
+    html += '</div>';
     document.getElementById('favContent').innerHTML = html;
     window.scrollTo(0, 0);
 }
@@ -638,4 +677,8 @@ function closeFavPage() {
     document.getElementById('favPage').style.display = 'none';
     document.getElementById('pageHeader').style.display = '';
     goHome();
+    // 如果之前在看某个分类列表，刷新其收藏状态
+    if (currentClass && currentDivision !== null) {
+        showDivision(currentClass, currentDivision, currentMineralPage);
+    }
 }

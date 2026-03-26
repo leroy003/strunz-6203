@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>矿物数据库 - Strunz分类系统</title>
-    <link rel="stylesheet" href="style.css?v=43">
+    <link rel="stylesheet" href="style.css?v=66">
 </head>
 <body>
 <div class="page-wrapper">
-    <div id="pageHeader" class="page-header">
+    <div id="pageHeader" class="page-header" style="display:none;">
         <span id="backBtn" class="header-back" onclick="goBack()" style="display:none;">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
         </span>
@@ -17,14 +17,14 @@
             <div class="desc">Strunz Mineral Query Tool</div>
         </div>
         <div id="headerActions" class="header-actions">
+            <span class="header-btn" onclick="toggleFavorites()">宝典</span>
             <span class="header-btn" onclick="toggleSearch()">搜索</span>
-            <span class="header-btn" onclick="toggleFavorites()">收藏</span>
         </div>
     </div>
 
     <div id="searchResults" class="search-results" style="display:none;"></div>
 
-    <nav id="classNav" class="class-nav">
+    <nav id="classNav" class="class-nav" style="display:none;">
         <div class="list-card" onclick="showClass('01')">
             <div class="list-card-left">
                 <div class="list-card-title">元素矿物</div>
@@ -159,15 +159,16 @@
         </div>
     </div>
 
-    <div id="favPage" style="display:none;">
+    <div id="favPage">
         <div class="page-header fav-header">
+            <span class="header-btn" onclick="syncFavToCloud()" style="z-index:1;">同步</span>
             <div class="header-text">
-                <div class="title">我的收藏</div>
-                <div class="desc">My Favorites</div>
+                <div class="title">我的矿物宝典</div>
+                <div class="desc">My MineralErta</div>
             </div>
             <div class="header-actions">
+                <span class="header-btn" onclick="closeFavPage()">Strunz</span>
                 <span class="header-btn" onclick="toggleSearch()">搜索</span>
-                <span class="header-btn" onclick="closeFavPage()">首页</span>
             </div>
         </div>
         <div id="favContent" class="fav-content"></div>
@@ -189,6 +190,6 @@
     <script src="data/class-09.js?v=7"></script>
     <script src="data/class-10.js?v=7"></script>
     <script src="mineral_aliases.js?v=1"></script>
-    <script src="app.js?v=23"></script>
+    <script src="app.js?v=38"></script>
 </body>
 </html>

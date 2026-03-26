@@ -2,15 +2,16 @@
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f5f5f5; color: #333; min-height: 100vh; }
 
 /* 全局容器限宽 750px 居中 */
-.page-wrapper { max-width: 750px; margin: 0 auto; background: #fff; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,.06); }
+.page-wrapper { max-width: 750px; margin: 0 auto; background: #fff; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,.06); opacity: 0; }
+.page-wrapper.ready { opacity: 1; transition: opacity .15s; }
 
 /* 页面标题组件 */
-.page-header { padding: 36px 24px 16px; background: #fff; position: relative; display: flex; align-items: flex-start; justify-content: space-between; }
+.page-header { padding: 36px 24px 1px; background: #fff; position: relative; display: flex; align-items: flex-start; justify-content: space-between; }
 .page-header .header-back { flex-shrink: 0; cursor: pointer; padding: 2px 0; display: flex; align-items: center; z-index: 1; }
 .page-header .header-back:hover svg { stroke: #666; }
 .page-header .header-text { position: absolute; left: 0; right: 0; top: 36px; text-align: center; pointer-events: none; }
 .page-header .header-actions { flex-shrink: 0; display: flex; align-items: center; gap: 8px; z-index: 1; margin-left: auto; }
-.header-btn { display: flex; align-items: center; justify-content: center; width: 40px; height: 30px; border-radius: 8px; border: 1px solid #E5E5E5; background: #fff; cursor: pointer; font-size: 14px; color: #333333; line-height: 1; transition: all .2s; }
+.header-btn { display: flex; align-items: center; justify-content: center; padding: 0 4px; height: 30px; border-radius: 8px; border: 1px solid #E5E5E5; background: #fff; cursor: pointer; font-size: 14px; color: #333333; line-height: 1; transition: all .2s; white-space: nowrap; }
 .header-btn:hover { border-color: #C5C5C5; background: #FAFAFA; }
 .page-header .title { font-size: 28px; font-weight: 700; color: #333333; line-height: 1; }
 .page-header .desc { font-size: 12px; color: #999999; line-height: 1; margin-top: 4px; }
@@ -23,7 +24,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .search-results .result-formula { color: #6366f1; font-size: .85rem; font-family: monospace; }
 
 /* 列表卡片 */
-.class-nav { display: flex; flex-direction: column; gap: 12px; max-width: 100%; margin: 0; padding: 24px 24px 36px; }
+.class-nav { display: flex; flex-direction: column; gap: 12px; max-width: 100%; margin: 0; padding: 60px 24px 36px; }
 .list-card { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid #E5E5E5; border-radius: 12px; padding: 16px 20px; cursor: pointer; transition: all .2s; }
 .list-card:hover { border-color: #C5C5C5; }
 .list-card-left { flex: 1; min-width: 0; }
@@ -39,6 +40,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .breadcrumb span::before { content: " › "; }
 
 #contentArea { padding: 0; }
+#contentArea > .class-nav > .pager { padding-top: 24px; }
 
 .division-list { display: grid; grid-template-columns: 1fr; gap: 10px; }
 .division-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px; cursor: pointer; transition: all .2s; }
@@ -49,6 +51,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .division-count { color: #6366f1; font-size: .82rem; margin-top: 6px; }
 
 .mineral-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.mineral-placeholder { padding: 14px 10px; border: 1px dashed #E5E5E5; border-radius: 12px; }
+.mineral-placeholder::before { content: '\00a0'; display: block; font-size: 16px; line-height: 1; }
+.mineral-placeholder::after { content: '\00a0'; display: block; font-size: 12px; margin-top: 4px; line-height: 1; }
 .mineral-item { background: #fff; border: 1px solid #E5E5E5; border-radius: 12px; padding: 14px 10px; cursor: pointer; transition: all .2s; text-align: center; overflow: hidden; }
 .mineral-item:hover { border-color: #C5C5C5; }
 .mineral-cn { font-weight: 600; color: #333333; font-size: 16px; line-height: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -56,8 +61,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .mineral-formula { color: #999999; font-size: 12px; font-family: monospace; margin-top: 4px; }
 
 /* 分页按钮 */
-.pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 12px; }
-.pager-btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; border: 1px solid #E5E5E5; border-radius: 12px; font-size: 14px; color: #333333; background: #fff; cursor: pointer; transition: all .2s; user-select: none; }
+.pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 0; }
+.pager-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 100px; padding: 10px 20px; border: 1px solid #E5E5E5; border-radius: 12px; font-size: 14px; color: #333333; background: #fff; cursor: pointer; transition: all .2s; user-select: none; }
 .pager-btn:hover:not(.disabled) { border-color: #C5C5C5; }
 .pager-btn.disabled { color: #CCCCCC; cursor: default; background: #FAFAFA; }
 .pager-info { font-size: 12px; color: #999999; }
@@ -110,29 +115,34 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .alias-tag { display: inline-block; font-size: 12px; color: #333333; background: #F9F9F9; border: 1px solid #E5E5E5; border-radius: 6px; padding: 4px; line-height: 1; }
 
 /* 收藏页面 */
-.fav-content { padding: 24px 24px 36px; }
+.fav-content { padding: 60px 24px 36px; display: flex; flex-direction: column; min-height: calc(100vh - 120px); }
+.fav-content > .pager { margin-top: auto; padding-top: 36px; }
 .fav-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .fav-item { background: #fff; border: 1px solid #E5E5E5; border-radius: 12px; padding: 14px 12px; cursor: pointer; transition: all .2s; text-align: center; overflow: hidden; aspect-ratio: 3 / 2; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 .fav-item:hover { border-color: #C5C5C5; }
+.fav-item-placeholder { border: 1px dashed #E5E5E5; border-radius: 12px; aspect-ratio: 3 / 2; }
 .fav-item-cn { font-weight: 600; color: #333333; font-size: 22px; line-height: 1; }
 .fav-item-en { color: #999999; font-size: 12px; margin-top: 6px; line-height: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fav-item-aliases { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; overflow: hidden; justify-content: center; }
+.fav-item-aliases { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; overflow: hidden; justify-content: center; max-height: 78px; }
 .fav-empty { text-align: center; padding: 80px 0; color: #ccc; font-size: 14px; }
 
 /* 矿物名称收藏高亮：蓝色方块宽 = 文字宽 + 10px（两边各5px） */
 .fav-highlight { background: linear-gradient(to top, rgba(49,126,222,0.5) 0%, rgba(49,126,222,0.5) 45%, transparent 45%); display: inline; padding: 0 5px; margin: 0 -5px; }
 
 @media (max-width: 480px) {
-    .page-header { padding: 36px 16px 16px; }
-    .class-nav { padding: 24px 16px 36px; }
+    .page-header { padding: 36px 16px 36px; }
+    .class-nav { padding: 60px 16px 36px; }
     .mineral-grid { gap: 8px; }
     .mineral-item { padding: 12px 8px; border-radius: 10px; }
     .mineral-cn { font-size: 14px; }
     .mineral-en { font-size: 11px; }
+    .mineral-placeholder { padding: 12px 8px; }
+    .mineral-placeholder::before { font-size: 14px; }
+    .mineral-placeholder::after { font-size: 11px; }
     .search-results { padding: 0 16px 12px; }
     .modal-body-all { padding: 36px 16px; }
     .pager-btn { padding: 10px 14px; font-size: 13px; }
-    .fav-content { padding: 24px 16px 36px; }
+    .fav-content { padding: 60px 16px 36px; }
     .fav-grid { gap: 8px; }
     .fav-item { padding: 12px 8px; border-radius: 10px; }
     .fav-item-cn { font-size: 22px; }
@@ -140,14 +150,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 }
 
 @media (max-width: 360px) {
-    .page-header { padding: 36px 12px 16px; }
-    .class-nav { padding: 24px 12px 36px; }
+    .page-header { padding: 36px 12px 1px; }
+    .class-nav { padding: 60px 12px 36px; }
     .mineral-grid { gap: 6px; }
     .mineral-item { padding: 10px 6px; border-radius: 8px; }
     .mineral-cn { font-size: 13px; }
     .mineral-en { font-size: 10px; }
+    .mineral-placeholder { padding: 10px 6px; }
+    .mineral-placeholder::before { font-size: 13px; }
+    .mineral-placeholder::after { font-size: 10px; }
     .modal-body-all { padding: 36px 12px; }
-    .fav-content { padding: 24px 12px 36px; }
+    .fav-content { padding: 60px 12px 36px; }
     .fav-grid { gap: 6px; }
     .fav-item { padding: 10px 8px; border-radius: 8px; }
     .fav-item-cn { font-size: 22px; }
