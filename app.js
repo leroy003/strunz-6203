@@ -141,23 +141,22 @@ function showMineral(classCode, divIndex, mIndex) {
 
     var enFormula = (m.en || '');
     if (m.formula) enFormula += '｜' + escapeHtml(m.formula);
-    var headerHtml = '<div class="modal-header">';
-    headerHtml += '<div class="modal-title">' + (m.cn || m.name || '') + '</div>';
-    headerHtml += '<div class="modal-en">' + enFormula + '</div>';
-    headerHtml += '</div>';
+    var html = '<div class="modal-header">';
+    html += '<div class="modal-title">' + (m.cn || m.name || '') + '</div>';
+    html += '<div class="modal-en">' + enFormula + '</div>';
+    html += '</div>';
 
-    var bodyHtml = '<table class="props-table">';
+    html += '<div class="props-grid2">';
     var keys = Object.keys(propLabels);
     for (var i = 0; i < keys.length; i++) {
         var k = keys[i];
         if (k === 'formula') continue;
         var val = m[k];
         if (val === undefined || val === null || val === '') continue;
-        bodyHtml += '<tr><td class="prop-label">' + propLabels[k] + '</td><td class="prop-value">' + escapeHtml(String(val)) + '</td></tr>';
+        html += '<div class="prop-cell"><div class="prop-label">' + propLabels[k] + '</div><div class="prop-value">' + escapeHtml(String(val)) + '</div></div>';
     }
-    bodyHtml += '</table>';
-    document.getElementById('modalHeader').innerHTML = headerHtml;
-    document.getElementById('modalBody').innerHTML = bodyHtml;
+    html += '</div>';
+    document.getElementById('modalBody').innerHTML = html;
     document.getElementById('mineralModal').style.display = 'flex';
 }
 
