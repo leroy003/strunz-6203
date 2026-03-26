@@ -49,7 +49,6 @@ function showClass(code) {
     document.getElementById('classNav').style.display = 'none';
     document.getElementById('mainContent').style.display = '';
     var header = document.getElementById('pageHeader');
-    header.classList.add('align-right');
     header.querySelector('.title').textContent = data.name;
     header.querySelector('.desc').textContent = code + '｜' + data.en;
     document.getElementById('backBtn').style.display = '';
@@ -147,9 +146,17 @@ function showMineral(classCode, divIndex, mIndex) {
     var subLine = className + '｜' + divName + '｜' + (m.en || '');
     if (m.formula) subLine += '｜' + escapeHtml(m.formula);
     var faved = isFavorited(classCode, divIndex, mIndex);
+    var aliases = getMineralAliases(m.en);
     var html = '<div class="modal-header">';
     html += '<div class="modal-title' + (faved ? ' fav-highlight' : '') + '" id="modalTitleText" style="cursor:pointer;" onclick="handleTitleFav(this,\'' + classCode + '\',' + divIndex + ',' + mIndex + ')">' + (m.cn || m.name || '') + '</div>';
     html += '<div class="modal-en">' + subLine + '</div>';
+    if (aliases.length > 0) {
+        html += '<div class="modal-aliases">';
+        for (var ai = 0; ai < aliases.length; ai++) {
+            html += '<span class="alias-tag">' + escapeHtml(aliases[ai]) + '</span>';
+        }
+        html += '</div>';
+    }
     html += '</div>';
 
     html += '<div class="props-grid2">';
@@ -190,12 +197,45 @@ function escapeHtml(s) {
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// 获取某矿物的所有别名/俗称（根据英文名反查别名表）
+function getMineralAliases(enName) {
+    if (typeof MINERAL_ALIASES === 'undefined' || !enName) return [];
+    var target = enName.toLowerCase();
+    var aliases = [];
+    var keys = Object.keys(MINERAL_ALIASES);
+    for (var i = 0; i < keys.length; i++) {
+        var a = MINERAL_ALIASES[keys[i]];
+        if (a.target && a.target.toLowerCase() === target) {
+            aliases.push(keys[i]);
+        }
+    }
+    return aliases;
+}
+
+// 别名搜索：查找匹配的别名，返回 [{ alias, target, cn, desc }]
+function findMatchingAliases(query) {
+    if (typeof MINERAL_ALIASES === 'undefined') return [];
+    var matched = [];
+    var keys = Object.keys(MINERAL_ALIASES);
+    for (var i = 0; i < keys.length; i++) {
+        if (keys[i].toLowerCase().indexOf(query) !== -1) {
+            var a = MINERAL_ALIASES[keys[i]];
+            if (a.target && a.target !== 'ite') { // 排除非矿物种（如琥珀等）
+                matched.push({ alias: keys[i], target: a.target.toLowerCase(), cn: a.cn || '', desc: a.desc || '' });
+            }
+        }
+    }
+    return matched;
+}
+
 function handleSearch(query) {
     var placeholder = document.getElementById('searchPlaceholder');
     if (placeholder) { placeholder.classList.toggle('hidden', query.length > 0); }
     query = query.trim().toLowerCase();
     var resultsDiv = document.getElementById('searchResults');
     if (query.length < 2) { resultsDiv.style.display = 'none'; return; }
+
+    // 直接匹配
     var results = [];
     var codes = Object.keys(allClassData);
     for (var ci = 0; ci < codes.length && results.length < 50; ci++) {
@@ -209,21 +249,53 @@ function handleSearch(query) {
                 var en = (m.en || '').toLowerCase();
                 var f = (m.formula || '').toLowerCase();
                 if (cn.indexOf(query) !== -1 || en.indexOf(query) !== -1 || f.indexOf(query) !== -1) {
-                    results.push({ m: m, classCode: codes[ci], divIndex: di, mIndex: mi });
+                    results.push({ m: m, classCode: codes[ci], divIndex: di, mIndex: mi, aliasInfo: null });
                 }
             }
         }
     }
+
+    // 别名匹配（补充直接匹配未覆盖的结果）
+    var aliases = findMatchingAliases(query);
+    if (aliases.length > 0) {
+        // 收集已匹配的英文名，避免重复
+        var matched = {};
+        for (var r = 0; r < results.length; r++) {
+            matched[(results[r].m.en || '').toLowerCase()] = true;
+        }
+        for (var ai = 0; ai < aliases.length && results.length < 50; ai++) {
+            var al = aliases[ai];
+            // 遍历数据找到 target 矿物
+            for (var ci2 = 0; ci2 < codes.length && results.length < 50; ci2++) {
+                var cd2 = allClassData[codes[ci2]];
+                if (!cd2) continue;
+                for (var di2 = 0; di2 < cd2.divisions.length && results.length < 50; di2++) {
+                    var minerals2 = cd2.divisions[di2].minerals || cd2.divisions[di2].species || [];
+                    for (var mi2 = 0; mi2 < minerals2.length && results.length < 50; mi2++) {
+                        var m2 = minerals2[mi2];
+                        var en2 = (m2.en || '').toLowerCase();
+                        if (en2 === al.target && !matched[en2]) {
+                            results.push({ m: m2, classCode: codes[ci2], divIndex: di2, mIndex: mi2, aliasInfo: al });
+                            matched[en2] = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     if (results.length === 0) {
         resultsDiv.innerHTML = '<div style="text-align:center;padding:20px;color:#999;">未找到匹配的矿物</div>';
     } else {
         var html = '';
-        for (var r = 0; r < results.length; r++) {
-            var item = results[r];
+        for (var r2 = 0; r2 < results.length; r2++) {
+            var item = results[r2];
             html += '<div class="result-item" onclick=\'showMineral("' + item.classCode + '",' + item.divIndex + ',' + item.mIndex + ')\'>';
             html += '<span class="result-cn">' + (item.m.cn || item.m.name || '') + '</span> ';
             html += '<span class="result-en">' + (item.m.en || '') + '</span>';
+            if (item.aliasInfo) html += '<span class="result-alias-tag">别名匹配</span>';
             html += '<div class="result-formula">' + escapeHtml(item.m.formula || '') + '</div>';
+            if (item.aliasInfo) html += '<div class="result-alias-desc">' + escapeHtml(item.aliasInfo.desc) + '</div>';
             html += '</div>';
         }
         resultsDiv.innerHTML = html;
@@ -258,6 +330,8 @@ function handleSearchModal(query) {
         resultsDiv.innerHTML = '<div class="search-modal-empty">输入关键词开始搜索</div>';
         return;
     }
+
+    // 直接匹配
     var results = [];
     var codes = Object.keys(allClassData);
     for (var ci = 0; ci < codes.length && results.length < 50; ci++) {
@@ -271,24 +345,89 @@ function handleSearchModal(query) {
                 var en = (m.en || '').toLowerCase();
                 var f = (m.formula || '').toLowerCase();
                 if (cn.indexOf(query) !== -1 || en.indexOf(query) !== -1 || f.indexOf(query) !== -1) {
-                    results.push({ m: m, classCode: codes[ci], divIndex: di, mIndex: mi });
+                    results.push({ m: m, classCode: codes[ci], divIndex: di, mIndex: mi, aliasInfo: null });
                 }
             }
         }
     }
+
+    // 别名匹配
+    var aliases = findMatchingAliases(query);
+    if (aliases.length > 0) {
+        var matched = {};
+        for (var r = 0; r < results.length; r++) {
+            matched[(results[r].m.en || '').toLowerCase()] = true;
+        }
+        for (var ai = 0; ai < aliases.length && results.length < 50; ai++) {
+            var al = aliases[ai];
+            for (var ci2 = 0; ci2 < codes.length && results.length < 50; ci2++) {
+                var cd2 = allClassData[codes[ci2]];
+                if (!cd2) continue;
+                for (var di2 = 0; di2 < cd2.divisions.length && results.length < 50; di2++) {
+                    var minerals2 = cd2.divisions[di2].minerals || cd2.divisions[di2].species || [];
+                    for (var mi2 = 0; mi2 < minerals2.length && results.length < 50; mi2++) {
+                        var m2 = minerals2[mi2];
+                        var en2 = (m2.en || '').toLowerCase();
+                        if (en2 === al.target && !matched[en2]) {
+                            results.push({ m: m2, classCode: codes[ci2], divIndex: di2, mIndex: mi2, aliasInfo: al });
+                            matched[en2] = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     if (results.length === 0) {
-        resultsDiv.innerHTML = '<div class="search-modal-empty">未找到匹配的矿物</div>';
+        // 检查是否有非矿物种的别名匹配（如琥珀、黑曜石等）
+        var nonMineralHints = [];
+        if (typeof MINERAL_ALIASES !== 'undefined') {
+            var allKeys = Object.keys(MINERAL_ALIASES);
+            for (var nk = 0; nk < allKeys.length; nk++) {
+                if (allKeys[nk].toLowerCase().indexOf(query) !== -1 && MINERAL_ALIASES[allKeys[nk]].target === 'ite') {
+                    nonMineralHints.push(MINERAL_ALIASES[allKeys[nk]].desc);
+                }
+            }
+        }
+        if (nonMineralHints.length > 0) {
+            var hintHtml = '<div class="search-modal-empty">未找到匹配的矿物</div>';
+            for (var nh = 0; nh < nonMineralHints.length; nh++) {
+                hintHtml += '<div style="text-align:center;padding:8px 0;color:#b8860b;font-size:13px;">' + escapeHtml(nonMineralHints[nh]) + '</div>';
+            }
+            resultsDiv.innerHTML = hintHtml;
+        } else {
+            resultsDiv.innerHTML = '<div class="search-modal-empty">未找到匹配的矿物</div>';
+        }
     } else {
         var html = '';
-        for (var r = 0; r < results.length; r++) {
-            var item = results[r];
+        for (var r2 = 0; r2 < results.length; r2++) {
+            var item = results[r2];
             html += '<div class="result-item" onclick=\'closeSearchModal();showMineral("' + item.classCode + '",' + item.divIndex + ',' + item.mIndex + ')\'>';
-            html += '<span class="result-cn">' + escapeHtml(item.m.cn || item.m.name || '') + '</span>';
-            html += '<span class="result-en">' + escapeHtml(item.m.en || '') + '</span>';
-            if (item.m.formula) html += '<div class="result-formula">' + escapeHtml(item.m.formula) + '</div>';
+            // 第一行：矿物名
+            html += '<div class="result-line1"><span class="result-cn">' + escapeHtml(item.m.cn || item.m.name || '') + '</span></div>';
+            // 第二行：英文名｜匹配别名说明
+            var line2 = escapeHtml(item.m.en || '');
+            if (item.aliasInfo && item.aliasInfo.desc) line2 += '<span class="result-alias-hint">｜' + escapeHtml(item.aliasInfo.desc) + '</span>';
+            html += '<div class="result-line2">' + line2 + '</div>';
+            // 第三行：别名标签
+            var itemAliases = getMineralAliases(item.m.en);
+            if (itemAliases.length > 0) {
+                html += '<div class="result-line3">';
+                for (var ta = 0; ta < itemAliases.length; ta++) {
+                    html += '<span class="alias-tag">' + escapeHtml(itemAliases[ta]) + '</span>';
+                }
+                html += '</div>';
+            }
             html += '</div>';
         }
-        html += '<div class="result-count">共找到 ' + results.length + ' 种矿物' + (results.length >= 50 ? '（仅显示前50条）' : '') + '</div>';
+        var directCount = 0, aliasCount = 0;
+        for (var rc = 0; rc < results.length; rc++) {
+            if (results[rc].aliasInfo) aliasCount++; else directCount++;
+        }
+        var countText = '共找到 ' + results.length + ' 种矿物';
+        if (aliasCount > 0) countText += '（直接匹配 ' + directCount + '，别名匹配 ' + aliasCount + '）';
+        if (results.length >= 50) countText += '（仅显示前50条）';
+        html += '<div class="result-count">' + countText + '</div>';
         resultsDiv.innerHTML = html;
     }
 }
@@ -459,8 +598,18 @@ function showFavPage(page) {
             var m = minerals[f.mIndex];
             if (!m) continue;
             html += '<div class="fav-item" onclick=\'showMineral("' + f.classCode + '",' + f.divIndex + ',' + f.mIndex + ')\'>';
-            html += '<div class="fav-item-cn">' + escapeHtml(m.cn || m.name || '未知') + '</div>';
+            html += '<div class="fav-item-cn"><span class="fav-highlight">' + escapeHtml(m.cn || m.name || '未知') + '</span></div>';
             html += '<div class="fav-item-en">' + escapeHtml(m.en || '') + '</div>';
+            var favAliases = getMineralAliases(m.en);
+            html += '<div class="fav-item-aliases">';
+            if (favAliases.length > 0) {
+                for (var ai = 0; ai < favAliases.length; ai++) {
+                    html += '<span class="alias-tag">' + escapeHtml(favAliases[ai]) + '</span>';
+                }
+            } else {
+                html += '<span class="alias-tag">' + escapeHtml(m.cn || m.name || '未知') + '</span>';
+            }
+            html += '</div>';
             html += '</div>';
         }
         html += '</div>';

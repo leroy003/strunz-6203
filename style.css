@@ -5,15 +5,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .page-wrapper { max-width: 750px; margin: 0 auto; background: #fff; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,.06); }
 
 /* 页面标题组件 */
-.page-header { padding: 36px 24px 16px; background: #fff; display: flex; align-items: flex-start; }
-.page-header .header-back { flex-shrink: 0; cursor: pointer; padding: 2px 0; margin-right: 4px; display: flex; align-items: center; }
+.page-header { padding: 36px 24px 16px; background: #fff; position: relative; display: flex; align-items: flex-start; justify-content: space-between; }
+.page-header .header-back { flex-shrink: 0; cursor: pointer; padding: 2px 0; display: flex; align-items: center; z-index: 1; }
 .page-header .header-back:hover svg { stroke: #666; }
-.page-header .header-text { flex: 1; min-width: 0; }
-.page-header .header-actions { flex-shrink: 0; display: flex; align-items: center; gap: 12px; margin-left: 16px; padding-top: 2px; }
-.header-action-btn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; transition: background .2s; }
-.header-action-btn:hover { background: #F5F5F5; }
-.header-action-btn:hover svg { stroke: #666; }
-.page-header.align-right .header-text { text-align: right; }
+.page-header .header-text { position: absolute; left: 0; right: 0; top: 36px; text-align: center; pointer-events: none; }
+.page-header .header-actions { flex-shrink: 0; display: flex; align-items: center; gap: 8px; z-index: 1; margin-left: auto; }
+.header-btn { display: flex; align-items: center; justify-content: center; width: 40px; height: 30px; border-radius: 8px; border: 1px solid #E5E5E5; background: #fff; cursor: pointer; font-size: 14px; color: #333333; line-height: 1; transition: all .2s; }
+.header-btn:hover { border-color: #C5C5C5; background: #FAFAFA; }
 .page-header .title { font-size: 28px; font-weight: 700; color: #333333; line-height: 1; }
 .page-header .desc { font-size: 12px; color: #999999; line-height: 1; margin-top: 4px; }
 
@@ -53,8 +51,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .mineral-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .mineral-item { background: #fff; border: 1px solid #E5E5E5; border-radius: 12px; padding: 14px 10px; cursor: pointer; transition: all .2s; text-align: center; overflow: hidden; }
 .mineral-item:hover { border-color: #C5C5C5; }
-.mineral-cn { font-weight: 600; color: #333333; font-size: 16px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mineral-en { color: #999999; font-size: 12px; margin-top: 4px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mineral-cn { font-weight: 600; color: #333333; font-size: 16px; line-height: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mineral-en { color: #999999; font-size: 12px; margin-top: 4px; line-height: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mineral-formula { color: #999999; font-size: 12px; font-family: monospace; margin-top: 4px; }
 
 /* 分页按钮 */
@@ -77,6 +75,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .modal-body-all { padding: 36px 24px; }
 .modal-title { font-size: 28px; font-weight: 700; color: #333333; line-height: 1; }
 .modal-en { font-size: 12px; color: #999999; line-height: 1; margin-top: 6px; }
+.modal-aliases { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; justify-content: center; }
 .modal-formula { color: #999999; font-size: 12px; font-family: monospace; margin-top: 4px; }
 
 .props-grid2 { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden; }
@@ -95,8 +94,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .search-modal-results .result-item { padding: 12px 14px; border: 1px solid #E5E5E5; border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: all .2s; }
 .search-modal-results .result-item:hover { border-color: #C5C5C5; background: #FAFAFA; }
 .search-modal-results .result-cn { font-weight: 600; color: #333; font-size: 15px; }
-.search-modal-results .result-en { color: #999; font-size: 12px; margin-left: 6px; }
-.search-modal-results .result-formula { color: #999; font-size: 12px; font-family: monospace; margin-top: 3px; }
+.search-modal-results .result-line1 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.search-modal-results .result-line2 { color: #999; font-size: 12px; margin-top: 4px; line-height: 1; }
+.result-alias-hint { color: #317EDE; }
+.search-modal-results .result-line3 { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .search-modal-results .result-count { text-align: center; padding: 12px 0; color: #999; font-size: 12px; }
 .prop-cell { padding: 8px 12px; border-bottom: 1px solid #E5E5E5; border-right: 1px solid #E5E5E5; }
 .prop-cell:nth-child(2n) { border-right: none; }
@@ -104,19 +105,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .prop-cell:nth-last-child(1):nth-child(odd) { grid-column: 1 / -1; border-right: none; }
 .prop-cell .prop-label { color: #999999; font-size: 12px; line-height: 1; margin-bottom: 3px; }
 .prop-cell .prop-value { color: #333333; font-size: 14px; line-height: 1.4; word-break: break-word; }
+.prop-cell-full { grid-column: 1 / -1; border-right: none; border-bottom: none; }
+.prop-aliases { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.alias-tag { display: inline-block; font-size: 12px; color: #333333; background: #F9F9F9; border: 1px solid #E5E5E5; border-radius: 6px; padding: 4px; line-height: 1; }
 
 /* 收藏页面 */
-.fav-header { display: flex; align-items: flex-start; }
-.fav-content { padding: 0 24px 36px; }
+.fav-content { padding: 24px 24px 36px; }
 .fav-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-.fav-item { background: #fff; border: 1px solid #E5E5E5; border-radius: 12px; padding: 14px 12px; cursor: pointer; transition: all .2s; text-align: left; overflow: hidden; }
+.fav-item { background: #fff; border: 1px solid #E5E5E5; border-radius: 12px; padding: 14px 12px; cursor: pointer; transition: all .2s; text-align: center; overflow: hidden; aspect-ratio: 3 / 2; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 .fav-item:hover { border-color: #C5C5C5; }
-.fav-item-cn { font-weight: 600; color: #333333; font-size: 22px; line-height: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fav-item-en { color: #999999; font-size: 12px; margin-top: 4px; line-height: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fav-item-cn { font-weight: 600; color: #333333; font-size: 22px; line-height: 1; }
+.fav-item-en { color: #999999; font-size: 12px; margin-top: 6px; line-height: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fav-item-aliases { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; overflow: hidden; justify-content: center; }
 .fav-empty { text-align: center; padding: 80px 0; color: #ccc; font-size: 14px; }
 
-/* 矿物名称收藏高亮 */
-.fav-highlight { background: linear-gradient(to top, #A9C9F1 0%, #A9C9F1 45%, transparent 45%); display: inline; padding: 0 5px; margin: 0 -5px; }
+/* 矿物名称收藏高亮：蓝色方块宽 = 文字宽 + 10px（两边各5px） */
+.fav-highlight { background: linear-gradient(to top, rgba(49,126,222,0.5) 0%, rgba(49,126,222,0.5) 45%, transparent 45%); display: inline; padding: 0 5px; margin: 0 -5px; }
 
 @media (max-width: 480px) {
     .page-header { padding: 36px 16px 16px; }
@@ -128,7 +132,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
     .search-results { padding: 0 16px 12px; }
     .modal-body-all { padding: 36px 16px; }
     .pager-btn { padding: 10px 14px; font-size: 13px; }
-    .fav-content { padding: 0 16px 36px; }
+    .fav-content { padding: 24px 16px 36px; }
     .fav-grid { gap: 8px; }
     .fav-item { padding: 12px 8px; border-radius: 10px; }
     .fav-item-cn { font-size: 22px; }
@@ -143,7 +147,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
     .mineral-cn { font-size: 13px; }
     .mineral-en { font-size: 10px; }
     .modal-body-all { padding: 36px 12px; }
-    .fav-content { padding: 0 12px 36px; }
+    .fav-content { padding: 24px 12px 36px; }
     .fav-grid { gap: 6px; }
     .fav-item { padding: 10px 8px; border-radius: 8px; }
     .fav-item-cn { font-size: 22px; }

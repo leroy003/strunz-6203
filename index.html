@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>矿物数据库 - Strunz分类系统</title>
-    <link rel="stylesheet" href="style.css?v=23">
+    <link rel="stylesheet" href="style.css?v=43">
 </head>
 <body>
 <div class="page-wrapper">
@@ -17,12 +17,8 @@
             <div class="desc">Strunz Mineral Query Tool</div>
         </div>
         <div id="headerActions" class="header-actions">
-            <span class="header-action-btn" onclick="toggleSearch()" title="搜索">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            </span>
-            <span class="header-action-btn" onclick="toggleFavorites()" title="收藏">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-            </span>
+            <span class="header-btn" onclick="toggleSearch()">搜索</span>
+            <span class="header-btn" onclick="toggleFavorites()">收藏</span>
         </div>
     </div>
 
@@ -170,12 +166,8 @@
                 <div class="desc">My Favorites</div>
             </div>
             <div class="header-actions">
-                <span class="header-action-btn" onclick="toggleSearch()" title="搜索">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                </span>
-                <span class="header-action-btn" onclick="closeFavPage()" title="首页">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                </span>
+                <span class="header-btn" onclick="toggleSearch()">搜索</span>
+                <span class="header-btn" onclick="closeFavPage()">首页</span>
             </div>
         </div>
         <div id="favContent" class="fav-content"></div>
@@ -196,6 +188,7 @@
     <script src="data/class-08.js?v=7"></script>
     <script src="data/class-09.js?v=7"></script>
     <script src="data/class-10.js?v=7"></script>
-    <script src="app.js?v=17"></script>
+    <script src="mineral_aliases.js?v=1"></script>
+    <script src="app.js?v=23"></script>
 </body>
 </html>
